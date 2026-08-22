@@ -59,6 +59,20 @@ function requireApiKey(req, res, next) {
 
 app.use("/api", requireApiKey);
 
+function requireString(value, fieldName) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`${fieldName} must be a non-empty string.`);
+  }
+  return value;
+}
+
+function requireInteger(value, fieldName) {
+  if (!Number.isInteger(value)) {
+    throw new Error(`${fieldName} must be an integer.`);
+  }
+  return value;
+}
+
 function asNullableNumber(value, fieldName) {
   if (value === undefined || value === null || value === "") return null;
   const number = Number(value);
@@ -104,6 +118,79 @@ function normalizePacket(packet) {
     created_at: packet.created_at ?? null,
   };
 }
+
+app.post("/api/v1/mesh/requests", async (req, res, next) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Request body must be a JSON object.",
+      });
+    }
+    const requestId = requireString(body?.requestId, "requestId");
+    const idempotencyKey = requireString(
+      req.get("Idempotency-Key"),
+      "Idempotency-Key header",
+    );
+    if (idempotencyKey !== requestId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Idempotency-Key must match requestId.",
+      });
+    }
+
+    requireInteger(body.schemaVersion, "schemaVersion");
+    requireString(body.originDeviceId, "originDeviceId");
+    requireString(body.category, "category");
+    requireString(body.priority, "priority");
+    requireInteger(body.createdAtMillis, "createdAtMillis");
+    if (!body.requester || !body.location || body.payload === undefined) {
+      return res.status(400).json({
+        status: "error",
+        message: "requester, location, and payload are required.",
+      });
+    }
+    requireString(body.requester.fullName, "requester.fullName");
+    requireString(body.requester.phoneNumber, "requester.phoneNumber");
+    requireInteger(body.location.latitudeE7, "location.latitudeE7");
+    requireInteger(body.location.longitudeE7, "location.longitudeE7");
+
+    const existing = await db.execute({
+      sql: "SELECT id FROM sos_packets WHERE id = ? LIMIT 1",
+      args: [requestId],
+    });
+    if (existing.rows.length > 0) {
+      return res.json({ requestId, accepted: true, duplicate: true });
+    }
+
+    const result = await db.execute({
+      sql: `
+        INSERT OR IGNORE INTO sos_packets
+          (id, sender_id, message_type, latitude, longitude, payload_json, hops, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        requestId,
+        body.originDeviceId,
+        body.category,
+        Number(body.location.latitudeE7) / 10_000_000,
+        Number(body.location.longitudeE7) / 10_000_000,
+        JSON.stringify(body),
+        Number(body.relayMetadata?.forwardCount ?? 0),
+        new Date(body.createdAtMillis).toISOString(),
+      ],
+    });
+
+    res.json({
+      requestId,
+      accepted: true,
+      duplicate: result.rowsAffected === 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.post("/api/packets/push", async (req, res, next) => {
   try {

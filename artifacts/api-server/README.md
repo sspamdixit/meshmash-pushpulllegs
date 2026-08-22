@@ -74,6 +74,62 @@ Public liveness check:
 }
 ```
 
+### `POST /api/v1/mesh/requests`
+
+Accepts a versioned mesh SOS request. This endpoint requires both the API key
+and an `Idempotency-Key` header. The idempotency key must match `requestId`.
+Repeated submissions with the same `requestId` are accepted as duplicates and
+are not inserted again.
+
+```bash
+curl -X POST https://your-service.onrender.com/api/v1/mesh/requests \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: replace-with-a-private-api-key" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{
+    "schemaVersion": 1,
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "originDeviceId": "70c16dae-eaca-4fa2-b1b4-51b69331e21c",
+    "category": "medical",
+    "priority": "EMERGENCY",
+    "createdAtMillis": 1787449200000,
+    "requester": {
+      "fullName": "Asha Kumar",
+      "phoneNumber": "+919876543210",
+      "personalIdType": "hospital_id",
+      "personalIdValue": "H-12345"
+    },
+    "location": {
+      "latitudeE7": 129715987,
+      "longitudeE7": 775945660,
+      "accuracyMeters": 8.0,
+      "capturedAtMillis": 1787449195000
+    },
+    "payloadEncoding": "base64",
+    "payload": "TmVlZCBtZWRpY2FsIGFzc2lzdGFuY2U=",
+    "relayMetadata": {
+      "receivedAtMillis": 1787449200000,
+      "lastForwardedAtMillis": 1787449260000,
+      "forwardCount": 3,
+      "status": "ACTIVE"
+    }
+  }'
+```
+
+Successful response:
+
+```json
+{
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "accepted": true,
+  "duplicate": false
+}
+```
+
+The same request submitted again returns `"duplicate": true`. The full
+versioned request is retained in `payload_json`; coordinates are also stored
+in the packet table as decimal latitude and longitude.
+
 ### `POST /api/packets/push`
 
 Accepts either one packet object or an array of packet objects. Every packet
