@@ -1,0 +1,1 @@
+- [Workflow secret input format](secret-inputs.md) — enter managed workflow secrets as raw values without surrounding quotes.
