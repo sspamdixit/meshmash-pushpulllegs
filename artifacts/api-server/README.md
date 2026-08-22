@@ -15,6 +15,26 @@ pnpm --filter @workspace/api-server start
 
 The server listens on `PORT`, defaulting to `3000`.
 
+## Live API
+
+The deployed API is available at:
+
+**[https://meshmash-pushpulllegs.onrender.com](https://meshmash-pushpulllegs.onrender.com)**
+
+Public health check:
+
+```text
+https://meshmash-pushpulllegs.onrender.com/health
+```
+
+Authenticated API endpoints:
+
+```text
+POST https://meshmash-pushpulllegs.onrender.com/api/v1/mesh/requests
+POST https://meshmash-pushpulllegs.onrender.com/api/packets/push
+GET  https://meshmash-pushpulllegs.onrender.com/api/packets/pull
+```
+
 ## Configuration
 
 Create a `.env` file in `artifacts/api-server/`, or configure these variables
@@ -82,7 +102,7 @@ Repeated submissions with the same `requestId` are accepted as duplicates and
 are not inserted again.
 
 ```bash
-curl -X POST https://your-service.onrender.com/api/v1/mesh/requests \
+  curl -X POST https://meshmash-pushpulllegs.onrender.com/api/v1/mesh/requests \
   -H "Content-Type: application/json" \
   -H "x-api-key: replace-with-a-private-api-key" \
   -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
@@ -152,7 +172,7 @@ Supported packet fields:
 Single-packet request:
 
 ```bash
-curl -X POST https://your-service.onrender.com/api/packets/push \
+curl -X POST https://meshmash-pushpulllegs.onrender.com/api/packets/push \
   -H "Content-Type: application/json" \
   -H "x-api-key: replace-with-a-private-api-key" \
   -d '{
@@ -218,14 +238,14 @@ Query parameters:
   than or equal to this value
 
 ```bash
-curl "https://your-service.onrender.com/api/packets/pull?limit=100" \
+curl "https://meshmash-pushpulllegs.onrender.com/api/packets/pull?limit=100" \
   -H "x-api-key: replace-with-a-private-api-key"
 ```
 
 With a timestamp filter:
 
 ```bash
-curl "https://your-service.onrender.com/api/packets/pull?since=2026-08-23T00:00:00Z" \
+curl "https://meshmash-pushpulllegs.onrender.com/api/packets/pull?since=2026-08-23T00:00:00Z" \
   -H "x-api-key: replace-with-a-private-api-key"
 ```
 
@@ -257,7 +277,7 @@ Use the deployed Render URL as the base URL and send the same `API_KEY` in the
 
 ```js
 const response = await fetch(
-  "https://your-service.onrender.com/api/packets/push",
+  "https://meshmash-pushpulllegs.onrender.com/api/packets/push",
   {
     method: "POST",
     headers: {
