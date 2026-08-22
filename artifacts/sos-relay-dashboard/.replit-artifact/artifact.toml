@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SOS Relay Dashboard"
+description = "An operations dashboard for monitoring SOS mesh requests received by the deployed Turso relay API, with refresh, filtering, and request detail inspection."
+version = "1.0.0"
+id = "artifacts/sos-relay-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19548
+
+[services.development]
+run = "pnpm --filter @workspace/sos-relay-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sos-relay-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/sos-relay-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19548"
+BASE_PATH = "/"
