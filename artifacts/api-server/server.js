@@ -42,6 +42,19 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
+app.get(["/", "/api", "/api/"], (_req, res) => {
+  res.json({
+    name: "SOS Packet Relay API",
+    status: "ok",
+    health: "/health",
+    endpoints: {
+      meshRequests: "POST /api/v1/mesh/requests",
+      packetPush: "POST /api/packets/push",
+      packetPull: "GET /api/packets/pull",
+    },
+  });
+});
+
 app.get(["/health", "/api/health"], (_req, res) => {
   res.json({ status: "ok" });
 });
